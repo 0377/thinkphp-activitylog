@@ -1,0 +1,23 @@
+{
+  "name": "0377/thinkphp-activitylog",
+  "description": "thinkphp6.0 记录活动",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Ice",
+      "email": "ice@sbing.vip"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.0",
+    "topthink/framework": "^6.0.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "ice\\activitylog\\": "src"
+    },
+    "files": [
+      "src/helper.php"
+    ]
+  }
+}
