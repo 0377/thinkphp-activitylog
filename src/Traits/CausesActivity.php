@@ -22,6 +22,7 @@ use ice\activitylog\ActivitylogService;
 
 trait CausesActivity
 {
+
     public function actions(): MorphMany
     {
         return $this->morphMany(

@@ -12,7 +12,7 @@ activity()->log('Look, I logged something');
 You can retrieve all activity using the `ice\activitylog\Models\Activity` model.
 
 ```php
-Activity::all();
+Activity::select();
 ```
 
 Here's a more advanced example:
@@ -23,7 +23,7 @@ activity()
    ->withProperties(['customProperty' => 'customValue'])
    ->log('Look, I logged something');
    
-$lastLoggedActivity = Activity::all()->last();
+$lastLoggedActivity = Activity::select()->last();
 
 $lastLoggedActivity->subject; //returns an instance of an eloquent model
 $lastLoggedActivity->causer; //returns an instance of your user model
@@ -74,29 +74,9 @@ If you've found a security issue please mail [freek@spatie.be](mailto:freek@spat
 You can install the package via composer:
 
 ``` bash
-composer require spatie/laravel-activitylog
+composer require ice/thinkphp-activitylog
 ```
 
-The package will automatically register itself.
-
-You can publish the migration with:
-```bash
-php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="migrations"
-```
-
-*Note*: The default migration assumes you are using integers for your model IDs. If you are using UUIDs, or some other format, adjust the format of the subject_id and causer_id fields in the published migration before continuing.
-
-After publishing the migration you can create the `activity_log` table by running the migrations:
-
-
-```bash
-php artisan migrate
-```
-
-You can optionally publish the config file with:
-```bash
-php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="config"
-```
 
 This is the contents of the published config file:
 
@@ -106,7 +86,7 @@ return [
     /*
      * If set to false, no activities will be saved to the database.
      */
-    'enabled' => env('ACTIVITY_LOGGER_ENABLED', true),
+    'enabled'                        => Env::get('ACTIVITY_LOGGER_ENABLED', true),
 
     /*
      * When the clean-command is executed, all recording activities older than
@@ -118,84 +98,23 @@ return [
      * If no log name is passed to the activity() helper
      * we use this default log name.
      */
-    'default_log_name' => 'default',
-
-    /*
-     * You can specify an auth driver here that gets user models.
-     * If this is null we'll use the default Laravel auth driver.
-     */
-    'default_auth_driver' => null,
-
-    /*
-     * If set to true, the subject returns soft deleted models.
-     */
-    'subject_returns_soft_deleted_models' => false,
+    'default_log_name'               => 'default',
 
     /*
      * This model will be used to log activity.
-     * It should be implements the Spatie\Activitylog\Contracts\Activity interface
-     * and extend Illuminate\Database\Eloquent\Model.
+     * It should be implements the ice\activitylog\Contracts\Activity interface
+     * and extend think\Model.
      */
-    'activity_model' => \Spatie\Activitylog\Models\Activity::class,
+    'activity_model'                 => \ice\activitylog\Models\Activity::class,
 
     /*
      * This is the name of the table that will be created by the migration and
      * used by the Activity model shipped with this package.
      */
-    'table_name' => 'activity_log',
+    'table_name'                     => 'activity_log',
 
-     /*
-      * This is the database connection that will be used by the migration and
-      * the Activity model shipped with this package. In case it's not set
-      * Laravel database.default will be used instead.
-      */
-    'database_connection' => env('ACTIVITY_LOGGER_DB_CONNECTION'),
 ];
 ```
-
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information about recent changes.
-
-## Upgrading
-
-Please see [UPGRADING](UPGRADING.md) for details.
-
-
-## Testing
-
-``` bash
-composer test
-```
-
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security
-
-If you discover any security related issues, please email freek@spatie.be instead of using the issue tracker.
-
-## Postcardware
-
-You're free to use this package, but if it makes it to your production environment we highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using.
-
-Our address is: Spatie, Samberstraat 69D, 2060 Antwerp, Belgium.
-
-We publish all received postcards [on our company website](https://spatie.be/en/opensource/postcards).
-
-## Credits
-
-- [Freek Van der Herten](https://github.com/freekmurze)
-- [Sebastian De Deyne](https://github.com/sebastiandedeyne)
-- [All Contributors](../../contributors)
-
-## Support us
-
-Spatie is a webdesign agency based in Antwerp, Belgium. You'll find an overview of all our open source projects [on our website](https://spatie.be/opensource).
-
-Does your business depend on our contributions? Reach out and support us on [Patreon](https://www.patreon.com/spatie). 
-All pledges will be dedicated to allocating workforce on maintenance and new awesome stuff.
 
 ## License
 

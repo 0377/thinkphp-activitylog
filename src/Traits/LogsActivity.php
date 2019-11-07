@@ -17,13 +17,13 @@
 
 namespace ice\activitylog\Traits;
 
-use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
-use Spatie\Activitylog\ActivityLogger;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\ActivitylogServiceProvider;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use think\Model;
+use think\helper\Arr;
+use think\Collection;
+use think\model\relation\MorphMany;
+use ice\activitylog\ActivityLogger;
+use ice\activitylog\ActivitylogService;
+
 
 trait LogsActivity
 {
@@ -35,7 +35,7 @@ trait LogsActivity
     {
         static::eventsToBeRecorded()->each(function ($eventName) {
             return static::$eventName(function (Model $model) use ($eventName) {
-                if (! $model->shouldLogEvent($eventName)) {
+                if (!$model->shouldLogEvent($eventName)) {
                     return;
                 }
 
@@ -49,7 +49,7 @@ trait LogsActivity
 
                 $attrs = $model->attributeValuesToBeLogged($eventName);
 
-                if ($model->isLogEmpty($attrs) && ! $model->shouldSubmitEmptyLogs()) {
+                if ($model->isLogEmpty($attrs) && !$model->shouldSubmitEmptyLogs()) {
                     return;
                 }
 
@@ -69,7 +69,7 @@ trait LogsActivity
 
     public function shouldSubmitEmptyLogs(): bool
     {
-        return ! isset(static::$submitEmptyLogs) ? true : static::$submitEmptyLogs;
+        return !isset(static::$submitEmptyLogs) ? true : static::$submitEmptyLogs;
     }
 
     public function isLogEmpty($attrs): bool
@@ -93,7 +93,7 @@ trait LogsActivity
 
     public function activities(): MorphMany
     {
-        return $this->morphMany(ActivitylogServiceProvider::determineActivityModel(), 'subject');
+        return $this->morphMany(ActivitylogService::determineActivityModel(), 'subject');
     }
 
     public function getDescriptionForEvent(string $eventName): string
@@ -125,16 +125,16 @@ trait LogsActivity
             'deleted',
         ]);
 
-        if (collect(class_uses_recursive(static::class))->contains(SoftDeletes::class)) {
+        /*if (collect(class_uses_recursive(static::class))->contains(SoftDelete::class)) {
             $events->push('restored');
-        }
+        }*/
 
         return $events;
     }
 
     public function attributesToBeIgnored(): array
     {
-        if (! isset(static::$ignoreChangedAttributes)) {
+        if (!isset(static::$ignoreChangedAttributes)) {
             return [];
         }
 
@@ -143,21 +143,21 @@ trait LogsActivity
 
     protected function shouldLogEvent(string $eventName): bool
     {
-        if (! $this->enableLoggingModelsEvents) {
+        if (!$this->enableLoggingModelsEvents) {
             return false;
         }
 
-        if (! in_array($eventName, ['created', 'updated'])) {
+        if (!in_array($eventName, ['created', 'updated'])) {
             return true;
         }
 
-        if (Arr::has($this->getDirty(), 'deleted_at')) {
-            if ($this->getDirty()['deleted_at'] === null) {
+        if (Arr::has($this->getChangedData(), 'deleted_time')) {
+            if ($this->getChangedData()['deleted_time'] === null) {
                 return false;
             }
         }
 
         //do not log update event if only ignored attributes are changed
-        return (bool) count(Arr::except($this->getDirty(), $this->attributesToBeIgnored()));
+        return (bool)count(Arr::except($this->getChangedData(), $this->attributesToBeIgnored()));
     }
 }

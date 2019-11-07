@@ -45,18 +45,18 @@ trait DetectsChanges
         $attributes = [];
 
         if (isset(static::$logFillable) && static::$logFillable) {
-            $attributes = array_merge($attributes, $this->getFillable());
+            $attributes = array_merge($attributes, $this->field());
         }
 
         if ($this->shouldLogUnguarded()) {
-            $attributes = array_merge($attributes, array_diff(array_keys($this->getAttributes()), $this->getGuarded()));
+            $attributes = array_merge($attributes, array_diff(array_keys($this->getData()), []));
         }
 
         if (isset(static::$logAttributes) && is_array(static::$logAttributes)) {
             $attributes = array_merge($attributes, array_diff(static::$logAttributes, ['*']));
 
             if (in_array('*', static::$logAttributes)) {
-                $attributes = array_merge($attributes, array_keys($this->getAttributes()));
+                $attributes = array_merge($attributes, array_keys($this->getData()));
             }
         }
 
@@ -86,7 +86,7 @@ trait DetectsChanges
             return false;
         }
 
-        if (in_array('*', $this->getGuarded())) {
+        if (in_array('*', [])) {
             return false;
         }
 
@@ -148,7 +148,7 @@ trait DetectsChanges
                     static::getModelAttributeJsonValue($model, $attribute)
                 );
             } else {
-                $changes[$attribute] = $model->getAttribute($attribute);
+                $changes[$attribute] = $model->getData($attribute);
 
                 if (
                     in_array($attribute, $model->getDates())
@@ -183,7 +183,7 @@ trait DetectsChanges
     {
         $path = explode('->', $attribute);
         $modelAttribute = array_shift($path);
-        $modelAttribute = collect($model->getAttribute($modelAttribute));
+        $modelAttribute = collect($model->getData($modelAttribute));
 
         return data_get($modelAttribute, implode('.', $path));
     }

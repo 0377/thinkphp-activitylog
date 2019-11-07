@@ -13,28 +13,36 @@
 namespace ice\activitylog;
 
 use Carbon\Carbon;
+use think\console\Input;
+use think\console\input\Argument;
+use think\console\input\Option;
+use think\console\Output;
 use think\db\Query;
 use think\console\Command;
 
 class CleanActivitylogCommand extends Command
 {
-    protected $signature = 'activitylog:clean
-                            {log? : (optional) The log name that will be cleaned.}
-                            {--days= : (optional) Records older than this number of days will be cleaned.}';
-
-    protected $description = 'Clean up old records from the activity log.';
-
-    public function handle()
+    protected function configure()
     {
-        $this->comment('Cleaning activity log...');
+        // 指令配置
+        $this->setName('activitylog:clean')
+            ->addArgument('log', Argument::OPTIONAL, '(optional) The log name that will be cleaned.', '')
+            ->addOption('days', 'd', Option::VALUE_OPTIONAL,
+                '(optional) Records older than this number of days will be cleaned.', '')
+            ->setDescription('Clean up old records from the activity log.');
+    }
 
-        $log = $this->argument('log');
+    protected function execute(Input $input, Output $output)
+    {
+        $output->comment('Cleaning activity log...');
 
-        $maxAgeInDays = $this->option('days') ?? config('activitylog.delete_records_older_than_days');
+        $log = $input->getArgument('log');
+
+        $maxAgeInDays = $input->getOption('days') ?? config('activitylog.delete_records_older_than_days');
 
         $cutOffDate = Carbon::now()->subDays($maxAgeInDays)->format('Y-m-d H:i:s');
 
-        $activity = ActivitylogServiceProvider::getActivityModelInstance();
+        $activity = ActivitylogService::getActivityModelInstance();
 
         $amountDeleted = $activity::where('created_at', '<', $cutOffDate)
             ->when($log !== null, function (Query $query) use ($log) {
@@ -42,8 +50,8 @@ class CleanActivitylogCommand extends Command
             })
             ->delete();
 
-        $this->info("Deleted {$amountDeleted} record(s) from the activity log.");
+        $output->info("Deleted {$amountDeleted} record(s) from the activity log.");
 
-        $this->comment('All done!');
+        $output->comment('All done!');
     }
 }

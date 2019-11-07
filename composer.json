@@ -1,7 +1,7 @@
 {
   "name": "0377/thinkphp-activitylog",
   "description": "thinkphp6.0 记录活动",
-  "license": "Apache-2.0",
+  "license": "MiT",
   "authors": [
     {
       "name": "Ice",
@@ -10,7 +10,9 @@
   ],
   "require": {
     "php": ">=7.1.0",
-    "topthink/framework": "^6.0.0"
+    "topthink/framework": "^6.0.0",
+    "topthink/think-migration": "^3.0",
+    "nesbot/carbon": "^2.25"
   },
   "autoload": {
     "psr-4": {

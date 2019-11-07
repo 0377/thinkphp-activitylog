@@ -2,6 +2,7 @@
 
 namespace ice\activitylog\Models;
 
+use think\db\Query;
 use think\helper\Arr;
 use think\Collection;
 use ice\activitylog\Contracts\Activity as ActivityContract;
@@ -10,29 +11,23 @@ use think\model\relation\MorphTo;
 
 class Activity extends Model implements ActivityContract
 {
-    public $guarded = [];
-
-    protected $casts = [
-        'properties' => 'collection',
+    protected $type = [
+        'properties' => 'serialize',
     ];
+    protected $autoWriteTimestamp = true;
 
-    public function __construct(array $attributes = [])
+    public function __construct(array $data = [])
     {
-        if (!isset($this->connection)) {
-            $this->setConnection(config('activitylog.database_connection'));
-        }
-
         if (!isset($this->table)) {
-            $this->setTable(config('activitylog.table_name'));
+            $this->name = config('activitylog.table_name');
         }
-
-        parent::__construct($attributes);
+        parent::__construct($data);
     }
 
     public function subject(): MorphTo
     {
         if (config('activitylog.subject_returns_soft_deleted_models')) {
-            return $this->morphTo()->withTrashed();
+            return $this->morphTo();
         }
 
         return $this->morphTo();
@@ -57,12 +52,12 @@ class Activity extends Model implements ActivityContract
         return $this->properties->only(['attributes', 'old']);
     }
 
-    public function getChangesAttribute(): Collection
+    public function getChangesAttr($value, $data): Collection
     {
         return $this->changes();
     }
 
-    public function scopeInLog(Builder $query, ...$logNames): Builder
+    public function scopeInLog(Query $query, ...$logNames): Query
     {
         if (is_array($logNames[0])) {
             $logNames = $logNames[0];
@@ -71,17 +66,17 @@ class Activity extends Model implements ActivityContract
         return $query->whereIn('log_name', $logNames);
     }
 
-    public function scopeCausedBy(Builder $query, Model $causer): Builder
+    public function scopeCausedBy(Query $query, Model $causer): Query
     {
         return $query
-            ->where('causer_type', $causer->getMorphClass())
+            ->where('causer_type', get_class($causer))
             ->where('causer_id', $causer->getKey());
     }
 
-    public function scopeForSubject(Builder $query, Model $subject): Builder
+    public function scopeForSubject(Query $query, Model $subject): Query
     {
         return $query
-            ->where('subject_type', $subject->getMorphClass())
+            ->where('subject_type', get_class($subject))
             ->where('subject_id', $subject->getKey());
     }
 }

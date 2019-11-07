@@ -17,40 +17,28 @@
 
 namespace ice\activitylog;
 
-use Spatie\String\Str;
-use Illuminate\Support\Arr;
-use Illuminate\Auth\AuthManager;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Traits\Macroable;
-use Illuminate\Contracts\Config\Repository;
-use Spatie\Activitylog\Exceptions\CouldNotLogActivity;
-use Spatie\Activitylog\Contracts\Activity as ActivityContract;
+use think\helper\Str;
+use think\helper\Arr;
+use think\Model;
+use ice\activitylog\Exceptions\CouldNotLogActivity;
+use ice\activitylog\Contracts\Activity as ActivityContract;
 
 class ActivityLogger
 {
-    use Macroable;
-
-    /** @var \Illuminate\Auth\AuthManager */
-    protected $auth;
 
     protected $defaultLogName = '';
 
-    /** @var string */
-    protected $authDriver;
 
-    /** @var \Spatie\Activitylog\ActivityLogStatus */
+    /** @var ActivityLogStatus */
     protected $logStatus;
 
-    /** @var \Spatie\Activitylog\Contracts\Activity */
+    /** @var ActivityContract */
     protected $activity;
 
-    public function __construct(AuthManager $auth, Repository $config, ActivityLogStatus $logStatus)
+    public function __construct(ActivityLogStatus $logStatus)
     {
-        $this->auth = $auth;
 
-        $this->authDriver = $config['activitylog']['default_auth_driver'] ?? $auth->getDefaultDriver();
-
-        $this->defaultLogName = $config['activitylog']['default_log_name'];
+        $this->defaultLogName = config('activitylog.default_log_name');
 
         $this->logStatus = $logStatus;
     }
@@ -74,7 +62,7 @@ class ActivityLogger
         return $this->performedOn($model);
     }
 
-    public function causedBy($modelOrId)
+    public function causedBy($modelOrId = null)
     {
         if ($modelOrId === null) {
             return $this;
@@ -159,7 +147,6 @@ class ActivityLogger
         }
 
         $activity = $this->activity;
-
         $activity->description = $this->replacePlaceholders(
             $activity->description ?? $description,
             $activity
@@ -178,14 +165,6 @@ class ActivityLogger
             return $modelOrId;
         }
 
-        $guard = $this->auth->guard($this->authDriver);
-        $provider = method_exists($guard, 'getProvider') ? $guard->getProvider() : null;
-        $model = method_exists($provider, 'retrieveById') ? $provider->retrieveById($modelOrId) : null;
-
-        if ($model instanceof Model) {
-            return $model;
-        }
-
         throw CouldNotLogActivity::couldNotDetermineUser($modelOrId);
     }
 
@@ -194,9 +173,9 @@ class ActivityLogger
         return preg_replace_callback('/:[a-z0-9._-]+/i', function ($match) use ($activity) {
             $match = $match[0];
 
-            $attribute = (string) (new Str($match))->between(':', '.');
+            $attribute = (string)(new Str($match))->between(':', '.');
 
-            if (! in_array($attribute, ['subject', 'causer', 'properties'])) {
+            if (!in_array($attribute, ['subject', 'causer', 'properties'])) {
                 return $match;
             }
 
@@ -216,12 +195,11 @@ class ActivityLogger
 
     protected function getActivity(): ActivityContract
     {
-        if (! $this->activity instanceof ActivityContract) {
-            $this->activity = ActivitylogServiceProvider::getActivityModelInstance();
-            $this
-                ->useLog($this->defaultLogName)
+        if (!$this->activity instanceof ActivityContract) {
+            $this->activity = ActivitylogService::getActivityModelInstance();
+            $this->useLog($this->defaultLogName)
                 ->withProperties([])
-                ->causedBy($this->auth->guard($this->authDriver)->user());
+                ->causedBy();
         }
 
         return $this->activity;
